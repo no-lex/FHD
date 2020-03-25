@@ -59,7 +59,8 @@ ENDFOR
 ;initialize antenna structure
 antenna_str={n_pol:n_ant_pol,antenna_type:instrument,names:ant_names,model_version:beam_model_version,freq:freq_center,nfreq_bin:nfreq_bin,$
     n_ant_elements:0,Jones:Ptrarr(n_ant_pol,n_ant_pol,nfreq_bin),coupling:Ptrarr(n_ant_pol,nfreq_bin),gain:Ptrarr(n_ant_pol),coords:Ptrarr(3),$
-    delays:Ptr_new(),size_meters:0.,height:0.,response:Ptrarr(n_ant_pol,nfreq_bin),group_id:Lonarr(n_ant_pol)-1,pix_window:Ptr_new()}
+    delays:Ptr_new(),size_meters:0.,height:0.,response:Ptrarr(n_ant_pol,nfreq_bin),group_id:Lonarr(n_ant_pol)-1,pix_window:Ptr_new(),pix_use:Ptr_new(),$
+    psf_image_dim:0.}
 
 IF Keyword_Set(import_pyuvdata_beam_filepath) THEN BEGIN
     antenna = pyuvdata_beam_import(antenna_str, import_pyuvdata_beam_filepath)
@@ -74,8 +75,8 @@ ENDIF ELSE BEGIN
       for inst_i=1, N_elements(instrument)-1 do begin
         antenna_temp=Call_function(tile_init_fn[inst_i],obs,antenna_str,_Extra=extra)
         antenna[*inst_tile_ptr[inst_i]] = pointer_copy(antenna_temp[*inst_tile_ptr[inst_i]])
-      endfor  
-    endif  
+      endfor
+    endif
     IF ~Keyword_Set(psf_dim) THEN $
         psf_dim=Ceil((Max(antenna.size_meters)*2.*Max(frequency_array)/speed_light)/kbinsize)
     psf_dim=Ceil(psf_dim/2.)*2. ;dimension MUST be even
@@ -93,6 +94,7 @@ ENDIF ELSE BEGIN
     psf_image_dim=psf_dim*psf_image_resolution*psf_intermediate_res ;use a larger box to build the model than will ultimately be used, to allow higher resolution in the initial image space beam model
     psf_superres_dim=psf_dim*psf_resolution
     psf_scale=dimension*psf_intermediate_res/psf_image_dim
+    antenna.psf_image_dim=psf_image_dim
 
     xvals_celestial=meshgrid(psf_image_dim,psf_image_dim,1)*psf_scale-psf_image_dim*psf_scale/2.+obsx
     yvals_celestial=meshgrid(psf_image_dim,psf_image_dim,2)*psf_scale-psf_image_dim*psf_scale/2.+obsy
@@ -121,7 +123,7 @@ ENDIF ELSE BEGIN
       apply_astrometry, obs, x_arr=xval_center, y_arr=yval_center, ra_arr=obs.orig_phasera, dec_arr=obs.orig_phasedec, /ad2xy
       xval_center = (90. - orig_phasealt)*sin(orig_phaseaz*!dtor)
       yval_center = (90. - orig_phasealt)*cos(orig_phaseaz*!dtor)
-      
+
       ;Apply an image window to the pixels in the horizon, centered on the phase center
       pix_window = fltarr(psf_image_dim,psf_image_dim)
       if typename(kernel_window) NE 'STRING' then kernel_window='Blackman-Harris^2'
@@ -138,7 +140,7 @@ ENDIF ELSE BEGIN
         antenna_temp=Call_function(tile_gain_fn[inst_i],obs,antenna_temp,za_arr=za_arr,az_arr=az_arr,psf_image_dim=psf_image_dim,Jdate_use=Jdate_use,_Extra=extra) ;mwa_beam_setup_gain
         antenna[*inst_tile_ptr[inst_i]] = pointer_copy(antenna_temp[*inst_tile_ptr[inst_i]])
         antenna[*inst_tile_ptr[inst_i]].antenna_type = instrument[inst_i] ;if more than one instrument, assign the correct antenna type for each subset for metadata purposes
-      endfor  
+      endfor
     endif else antenna=Call_function(tile_gain_fn,obs,antenna,za_arr=za_arr,az_arr=az_arr,psf_image_dim=psf_image_dim,Jdate_use=Jdate_use,_Extra=extra) ;mwa_beam_setup_gain
 ENDELSE
 
