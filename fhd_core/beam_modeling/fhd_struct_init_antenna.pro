@@ -9,6 +9,7 @@ t0=Systime(1)
 IF N_Elements(beam_model_version) EQ 0 THEN beam_model_version=1
 instrument=obs.instrument
 
+;If other phases of the mwa are used, use the proper gain and init functions
 IF STRMID(instrument,0,3) EQ 'mwa' THEN BEGIN
   tile_gain_fn='mwa_beam_setup_gain'
   tile_init_fn='mwa_beam_setup_init'
