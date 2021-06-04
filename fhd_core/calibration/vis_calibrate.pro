@@ -8,14 +8,14 @@ FUNCTION vis_calibrate,vis_ptr,cal,obs,status_str,psf,params,jones,vis_weight_pt
     calibration_auto_fit=calibration_auto_fit,cal_stop=cal_stop, model_transfer=model_transfer,$
     sim_over_calibrate=sim_over_calibrate,sim_perf_calibrate=sim_perf_calibrate,$
     auto_ratio_calibration=auto_ratio_calibration,no_png=no_png,_Extra=extra
-    
+
   t0_0=Systime(1)
   error=0
   timing=-1
   initialize_fhd_struct, 'cal', obs=obs, params=params
   heap_gc
   IF N_Elements(flag_calibration) EQ 0 THEN flag_calibration=1
-  
+
   IF Keyword_Set(transfer_calibration) THEN BEGIN
     IF size(transfer_calibration,/type) EQ 7 THEN BEGIN
       cal_file_use=transfer_calibration
@@ -74,13 +74,13 @@ FUNCTION vis_calibrate,vis_ptr,cal,obs,status_str,psf,params,jones,vis_weight_pt
     timing=Systime(1)-t0_0
 
     ;;Check that the flagging of the restored cal is accurately captured in the obs structure
-    ;; and broadcast flags across all pols  
+    ;; and broadcast flags across all pols
     for pol_i=0,cal.n_pol-1 do begin
       tile_total=FLTARR(cal.n_tile)
       freq_total=FLTARR(cal.n_freq)
       for tile_i=0, cal.n_tile-1 do tile_total[tile_i] = total(abs((*cal.gain[pol_i])[*,tile_i]),/NAN)
       for freq_i=0, cal.n_freq-1 do freq_total[freq_i] = total(abs((*cal.gain[pol_i])[freq_i,*]),/NAN)
-      tile_flag_inds = where(tile_total EQ 0,n_tile_flag)                          
+      tile_flag_inds = where(tile_total EQ 0,n_tile_flag)
       freq_flag_inds = where(freq_total EQ 0,n_freq_flag)
       if n_tile_flag GT 0 then begin
         (*obs.baseline_info).tile_use[tile_flag_inds]=0
@@ -97,7 +97,7 @@ FUNCTION vis_calibrate,vis_ptr,cal,obs,status_str,psf,params,jones,vis_weight_pt
     ;; Option to transfer pre-made and unflagged model visbilities
     if keyword_set(model_transfer) then begin
       vis_model_arr=PTRARR(obs.n_pol,/allocate)
-      
+
       for pol_i=0, obs.n_pol-1 do begin
         transfer_name = model_transfer + '/' + obs.obsname + '_vis_model_'+obs.pol_names[pol_i]+'.sav'
         if ~file_test(transfer_name) then begin
@@ -109,7 +109,7 @@ FUNCTION vis_calibrate,vis_ptr,cal,obs,status_str,psf,params,jones,vis_weight_pt
 
     RETURN,vis_cal
   ENDIF
-  
+
   if ~keyword_set(model_transfer) then begin
     vis_model_arr=vis_source_model(cal.skymodel,obs,status_str,psf,params,vis_weight_ptr,cal,jones,$
       model_uv_arr=model_uv_arr,/fill_model_vis,timing=model_timing,silent=silent,error=error,/calibration_flag,$
@@ -219,18 +219,18 @@ FUNCTION vis_calibrate,vis_ptr,cal,obs,status_str,psf,params,jones,vis_weight_pt
 
     cal_bandpass=vis_cal_bandpass(cal,obs,params,cal_remainder=cal_remainder,auto_ratio_calibration=auto_ratio_calibration,$
       file_path_fhd=file_path_fhd,_Extra=extra)
- 
+
     IF Keyword_Set(calibration_polyfit) THEN BEGIN
       cal_polyfit=vis_cal_polyfit(cal_remainder,obs,auto_ratio=auto_ratio,_Extra=extra)
 
       cal=vis_cal_combine(cal_polyfit,cal_bandpass)
     ENDIF ELSE cal=cal_bandpass
-    
+
     IF Keyword_Set(auto_ratio_calibration) THEN BEGIN
-      cal=cal_auto_ratio(obs,cal,auto_ratio=auto_ratio,auto_tile_i=auto_tile_i,/remultiply)    
+      cal=cal_auto_ratio(obs,cal,auto_ratio=auto_ratio,auto_tile_i=auto_tile_i,/remultiply)
     ENDIF
   ENDIF ELSE IF Keyword_Set(calibration_polyfit) THEN cal=vis_cal_polyfit(cal,obs,_Extra=extra)
-   
+
   ;; In-situ simulation -- forced calibration solutions
   if keyword_set(sim_over_calibrate) then begin
     *cal.gain[0] = (*cal_base.gain[0])
@@ -242,7 +242,7 @@ FUNCTION vis_calibrate,vis_ptr,cal,obs,status_str,psf,params,jones,vis_weight_pt
     (*cal.gain[1])[*,*] = 1.
     print, "Forcing perfect solutions on the simulated gains"
   endif
-    
+
   ;; Get amp from auto-correlation visibilities for plotting (or optionally for the calibration solution itself)
   IF Keyword_Set(vis_auto_model) THEN BEGIN
     cal_auto=vis_cal_auto_fit(obs,cal,vis_auto=vis_auto,vis_model_auto=vis_auto_model,auto_tile_i=auto_tile_i)
@@ -250,7 +250,7 @@ FUNCTION vis_calibrate,vis_ptr,cal,obs,status_str,psf,params,jones,vis_weight_pt
   IF Keyword_Set(calibration_auto_fit) THEN BEGIN
     cal_res=vis_cal_subtract(cal_base,cal_auto)
   ENDIF ELSE cal_res=vis_cal_subtract(cal_base,cal)
-  
+
   basename=file_basename(file_path_fhd)
   dirpath=file_dirname(file_path_fhd)
   image_path=filepath(basename,root=dirpath,sub='output_images')
@@ -266,7 +266,7 @@ FUNCTION vis_calibrate,vis_ptr,cal,obs,status_str,psf,params,jones,vis_weight_pt
 
   IF Keyword_Set(vis_baseline_hist) THEN BEGIN
     vis_baseline_hist,obs,params,vis_arr=vis_cal,vis_model_arr=vis_model_arr,file_path_fhd=file_path_fhd
-  ENDIF  
+  ENDIF
 
   IF ~Keyword_Set(return_cal_visibilities) THEN preserve_visibilities=0
   IF Keyword_Set(calibration_visibilities_subtract) THEN BEGIN
