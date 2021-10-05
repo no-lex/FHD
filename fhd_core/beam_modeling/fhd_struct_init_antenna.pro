@@ -115,12 +115,13 @@ dec_use=dec_arr[valid_i]
 Eq2Hor,ra_use,dec_use,Jdate_use,alt_arr1,az_arr1,lat=obs.lat,lon=obs.lon,alt=obs.alt,precess=1,/nutate, refract=0
 za_arr=fltarr(psf_image_dim,psf_image_dim)+90. & za_arr[valid_i]=90.-alt_arr1
 az_arr=fltarr(psf_image_dim,psf_image_dim) & az_arr[valid_i]=az_arr1
+;Get pixels which fall within the horizon
+horizon_test=where(abs(za_arr) GE 90.,n_horizon_test,complement=pix_use,ncomplement=n_pix)
+antenna.pix_use=ptr_new(pix_use)
 
 if keyword_set(kernel_window) then begin
   print, 'Applying a modified gridding kernel. Beam is no longer instrumental. Do not use for calibration.'
 
-  ;Get pixels which fall within the horizon
-  horizon_test=where(abs(za_arr) GE 90.,n_horizon_test,complement=pix_use,ncomplement=n_pix)
   xvals_instrument=za_arr*Sin(az_arr*!DtoR)
   yvals_instrument=za_arr*Cos(az_arr*!DtoR)
 
@@ -147,7 +148,7 @@ if N_elements(instrument) GT 1 then begin
     antenna[*inst_tile_ptr[inst_i]] = pointer_copy(antenna_temp[*inst_tile_ptr[inst_i]])
     antenna[*inst_tile_ptr[inst_i]].antenna_type = instrument[inst_i] ;if more than one instrument, assign the correct antenna type for each subset for metadata purposes
   endfor
-endif else antenna=Call_function(tile_gain_fn,obs,antenna,za_arr=za_arr,az_arr=az_arr,psf_image_dim=psf_image_dim,Jdate_use=Jdate_use,_Extra=extra) ;mwa_beam_setup_gain
+endif else antenna=Call_function(tile_gain_fn,obs,antenna,za_arr=za_arr,az_arr=az_arr,psf_image_dim=psf_image_dim,Jdate_use=Jdate_use,import_pyuvdata_beam_filepath=import_pyuvdata_beam_filepath,_Extra=extra) ;mwa_beam_setup_gain
 
 ;Finally, update antenna structure to include the response of each antenna
 antenna=general_antenna_response(obs,antenna,za_arr=za_arr,az_arr=az_arr,psf_image_dim=psf_image_dim,_Extra=extra)

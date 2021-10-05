@@ -1,11 +1,12 @@
 FUNCTION lwa_beam_setup_gain,obs,antenna,file_path_fhd=file_path_fhd,$
   za_arr=za_arr,az_arr=az_arr,psf_image_dim=psf_image_dim,Jdate_use=Jdate_use,$
-  import_pyuvdata_beam_filepath=import_pyuvdata_beam_filepath
+  import_pyuvdata_beam_filepath=import_pyuvdata_beam_filepath,_Extra=extra
   
-  if ~keyword_set(import_pyuvdata_beam_filepath) then message, 'ERROR: import_pyuvdata_beam_filepath not provided'
+  if ~keyword_set(import_pyuvdata_beam_filepath) then import_pyuvdata_beam_filepath=extra.import_pyuvdata_beam_filepath
 
   n_ant_pol=Max(antenna.n_pol)
   nfreq_bin=Max(antenna.nfreq_bin)
+  pix_use = *antenna[0].pix_use
   IF N_Elements(file_path_fhd) EQ 0 THEN file_path_fhd=''
   n_tile=obs.n_tile
   beam_model_version=Max(antenna.model_version)
@@ -29,10 +30,9 @@ FUNCTION lwa_beam_setup_gain,obs,antenna,file_path_fhd=file_path_fhd,$
   ENDFOR
   
   ;get the instrumental pol Jones matrix
-  pyuvdata_filepath=filepath('NF_HERA_Vivaldi_efield_beam.fits',root=rootdir('HERA-Beams'),sub='NicolasFagnoniBeams')
   print,"Reading in: " + pyuvdata_filepath
   Jones_matrix = pyuvdata_beam_import(obs, antenna, pyuvdata_filepath,$
-    za_arr=za_arr, az_arr=az_arr, psf_image_dim=psf_image_dim)
+    za_arr=za_arr, az_arr=az_arr, psf_image_dim=psf_image_dim, pix_use=pix_use)
   
   antenna.jones=Jones_matrix
 
