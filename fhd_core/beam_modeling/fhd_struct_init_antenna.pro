@@ -3,10 +3,11 @@ FUNCTION fhd_struct_init_antenna,obs,beam_model_version=beam_model_version,$
     psf_image_resolution=psf_image_resolution,timing=timing,$
     psf_dim=psf_dim,psf_max_dim=psf_max_dim,beam_offset_time=beam_offset_time,debug_dim=debug_dim,$
     inst_tile_ptr=inst_tile_ptr,ra_arr=ra_arr,dec_arr=dec_arr,fractional_size=fractional_size,$
-    import_pyuvdata_beam_filepath=import_pyuvdata_beam_filepath, _Extra=extra
+    import_pyuvdata_beam_filepath=import_pyuvdata_beam_filepath, use_psf_resolution=use_psf_resolution, _Extra=extra
 t0=Systime(1)
 
 IF N_Elements(beam_model_version) EQ 0 THEN beam_model_version=1
+IF N_Elements(use_psf_resolution) GT 0 THEN psf_resolution=use_psf_resolution
 instrument=obs.instrument
 
 ;If other phases of the mwa are used, use the proper gain and init functions
